@@ -1,0 +1,55 @@
+{
+  "input_metadata": {
+    "type": "image_folder",
+    "frame_count": 60
+  },
+  "pipeline_config": {
+    "gaussian_ksize": 3,
+    "background_kernel": 31,
+    "blackhat_kernel": 11,
+    "clahe_clip_limit": 2.0,
+    "clahe_grid": [
+      8,
+      8
+    ],
+    "use_temporal_subtraction": true,
+    "use_translation_registration": false,
+    "percentile_normalization": false,
+    "low_percentile": 1.0,
+    "high_percentile": 99.5,
+    "vessel_gain": 1.15,
+    "fast_clahe_8bit": true
+  },
+  "benchmark": {
+    "frames_tested": 60,
+    "height": 512,
+    "width": 512,
+    "dtype": "uint16",
+    "average_latency_ms": 5.898533333333333,
+    "minimum_latency_ms": 5.0753,
+    "maximum_latency_ms": 7.1452,
+    "p50_latency_ms": 5.7805,
+    "p95_latency_ms": 6.960805,
+    "p99_latency_ms": 7.038764,
+    "fps_from_average_latency": 169.53366938674023,
+    "throughput_fps_total": 169.34509453831024,
+    "meets_36ms_maximum": true,
+    "hardware": {
+      "platform": "Windows-11-10.0.26200-SP0",
+      "machine": "AMD64",
+      "processor": "AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",
+      "logical_cpu_count": 12,
+      "opencv_version": "5.0.0",
+      "opencv_cuda_device_count": 0,
+      "ram_gb": 7.34
+    },
+    "mean_stage_ms": {
+      "normalize_ms": 0.005529999999999999,
+      "denoise_ms": 0.2969416666666667,
+      "suppression_ms": 3.0960183333333333,
+      "vessel_boost_ms": 0.8119983333333333,
+      "clahe_ms": 1.3136100000000002,
+      "total_ms": 5.524098333333333
+    }
+  }
+}

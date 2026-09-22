@@ -1,0 +1,16 @@
+{
+  "case_name": "case_03_noisy_motion",
+  "case_type": "noisy_motion",
+  "frames": 24,
+  "resolution": [
+    512,
+    512
+  ],
+  "pixel_dtype": "uint16",
+  "value_range": [
+    0,
+    65535
+  ],
+  "reference_frame_index": 0,
+  "description": "Higher noise, mild translational motion and periodic artifact; tests robustness."
+}

@@ -1,0 +1,16 @@
+{
+  "case_name": "case_01_clean",
+  "case_type": "clean",
+  "frames": 24,
+  "resolution": [
+    512,
+    512
+  ],
+  "pixel_dtype": "uint16",
+  "value_range": [
+    0,
+    65535
+  ],
+  "reference_frame_index": 0,
+  "description": "Moderate vessel contrast, moderate detector noise, stable anatomy."
+}

@@ -1,0 +1,16 @@
+{
+  "case_name": "case_02_low_contrast",
+  "case_type": "low_contrast",
+  "frames": 24,
+  "resolution": [
+    512,
+    512
+  ],
+  "pixel_dtype": "uint16",
+  "value_range": [
+    0,
+    65535
+  ],
+  "reference_frame_index": 0,
+  "description": "Reduced coronary contrast with moderate noise; tests contrast enhancement."
+}

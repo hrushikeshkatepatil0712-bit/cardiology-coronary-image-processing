@@ -1,0 +1,67 @@
+{
+  "input_metadata": {
+    "npz_keys": [
+      "frames",
+      "vessel_masks",
+      "dtype",
+      "reference_frame_index",
+      "contrast_levels"
+    ],
+    "shape": [
+      24,
+      512,
+      512
+    ],
+    "type": "npz",
+    "frame_count_loaded": 24
+  },
+  "pipeline_config": {
+    "gaussian_ksize": 3,
+    "background_kernel": 31,
+    "blackhat_kernel": 11,
+    "clahe_clip_limit": 2.0,
+    "clahe_grid": [
+      8,
+      8
+    ],
+    "use_temporal_subtraction": true,
+    "use_translation_registration": false,
+    "percentile_normalization": false,
+    "low_percentile": 1.0,
+    "high_percentile": 99.5,
+    "vessel_gain": 1.15,
+    "fast_clahe_8bit": true
+  },
+  "benchmark": {
+    "frames_tested": 24,
+    "height": 512,
+    "width": 512,
+    "dtype": "uint16",
+    "average_latency_ms": 6.8182374999999995,
+    "minimum_latency_ms": 6.1093,
+    "maximum_latency_ms": 7.8868,
+    "p50_latency_ms": 6.7158999999999995,
+    "p95_latency_ms": 7.5249749999999995,
+    "p99_latency_ms": 7.806599,
+    "fps_from_average_latency": 146.66546889867067,
+    "throughput_fps_total": 146.39136144576108,
+    "meets_36ms_maximum": true,
+    "hardware": {
+      "platform": "Windows-11-10.0.26200-SP0",
+      "machine": "AMD64",
+      "processor": "AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",
+      "logical_cpu_count": 12,
+      "opencv_version": "5.0.0",
+      "opencv_cuda_device_count": 0,
+      "ram_gb": 7.34
+    },
+    "mean_stage_ms": {
+      "normalize_ms": 0.009975,
+      "denoise_ms": 0.28085,
+      "suppression_ms": 2.9590541666666668,
+      "vessel_boost_ms": 1.0571166666666667,
+      "clahe_ms": 1.5217374999999997,
+      "total_ms": 5.828733333333332
+    }
+  }
+}

@@ -1,0 +1,4 @@
+case_name,case_type,frames,width,height,dtype,reference_frame_index,purpose
+case_01_clean,clean,24,512,512,uint16,0,"Moderate vessel contrast, moderate detector noise, stable anatomy."
+case_02_low_contrast,low_contrast,24,512,512,uint16,0,Reduced coronary contrast with moderate noise; tests contrast enhancement.
+case_03_noisy_motion,noisy_motion,24,512,512,uint16,0,"Higher noise, mild translational motion and periodic artifact; tests robustness."
