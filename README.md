@@ -1,134 +1,150 @@
-# Coronary Angiography Image Enhancement — Real-Time Baseline
+# 🫀 Coronary Angiography Image Enhancement — Real-Time Baseline
 
-A research/assignment baseline for enhancing **contrast-filled coronary arteries in X-ray/cine angiography** while suppressing slowly varying anatomical background and persistent structures.
+> 🩻 **A real-time computer vision pipeline for enhancing contrast-filled coronary arteries in X-ray/cine angiography while suppressing anatomical background structures.**
 
-The pipeline supports **16-bit grayscale image processing**, optional temporal subtraction and translation registration, and detailed per-frame latency benchmarking.
+This project is a research/assignment baseline designed to enhance the visibility of coronary vessels in angiography images while maintaining a strict **≤ 36 ms/frame processing-latency target**.
 
-> ⚠️ **Important:** This is research/educational software, not a certified medical device and not intended for diagnosis or clinical decision-making.
+The pipeline supports **16-bit grayscale processing**, cine sequences, DICOM images, NPZ datasets, image folders, and common video formats.
 
----
-
-## 📌 Project Overview
-
-Coronary angiography images contain thin, branching coronary vessels superimposed on anatomical structures such as:
-
-* Ribs
-* Spine
-* Lung fields
-* Soft-tissue background
-* Sensor noise
-
-The goal of this project is to suppress the slowly varying and persistent background while enhancing vessel-like structures under a strict real-time processing requirement.
-
-### Target Requirement
-
-```text
-Maximum processing latency ≤ 36 ms/frame
-```
-
-The latency measurement covers the processing pipeline from the moment a frame enters the enhancement pipeline until the final enhanced frame is produced.
-
-Disk I/O and file-writing operations are excluded from this measurement.
+> ⚠️ **Important:** This is research/educational software. It is **not a certified medical device** and is **not intended for diagnosis or clinical decision-making**.
 
 ---
 
-# 🎯 Objectives
+# 🎯 Project Objectives
 
-* Process 16-bit grayscale coronary angiography images.
-* Suppress slowly varying anatomical background.
-* Enhance dark, thin coronary vessels.
-* Support single frames and cine sequences.
-* Support temporal/reference-frame subtraction.
-* Handle small translational motion.
-* Preserve meaningful intensity relationships across cine frames.
-* Provide raw, processed, and enhanced outputs.
-* Generate visual comparison images/videos.
-* Benchmark processing latency and FPS.
-* Maintain a maximum processing latency of ≤36 ms/frame when measured on the target hardware.
+The main objectives of this project are:
+
+* 🫀 Enhance contrast-filled coronary arteries.
+* 🧹 Suppress slowly varying anatomical background.
+* 🩻 Reduce the visual influence of ribs, spine, and lung fields.
+* 🔢 Preserve and process 16-bit grayscale information.
+* 🎞️ Support single images and cine sequences.
+* 🔄 Support temporal/reference-frame subtraction.
+* 📐 Support optional small translation registration.
+* ✨ Improve local vessel contrast using CLAHE.
+* ⚡ Maintain a maximum processing latency target of **36 ms/frame**.
+* 📊 Generate detailed benchmark statistics.
+* 🖼️ Generate raw, processed, and enhanced image comparisons.
+* 🎥 Generate comparison videos for cine sequences.
 
 ---
 
 # 🔬 What the Pipeline Does
 
-The complete processing pipeline is:
+The complete image-processing workflow is:
 
 ```text
-Input Image / Cine
-        │
-        ▼
-16-bit Conversion / Preservation
-        │
-        ▼
-Intensity Normalization
-        │
-        ▼
-Gaussian Denoising
-        │
-        ▼
-Background Suppression
-   ┌────┴─────────────┐
-   │                  │
-Box Filter       Black-Hat
-   │                  │
-   └────────┬─────────┘
-            ▼
-   Optional Temporal
-   Reference Subtraction
-            │
-            ▼
- Optional Translation
-     Registration
-            │
-            ▼
-   Vessel Response Boost
-            │
-            ▼
-          CLAHE
-            │
-            ▼
- Enhanced Coronary Image
+                         🩻 INPUT IMAGE / CINE
+                                  │
+                                  ▼
+                         🔢 16-BIT CONVERSION
+                                  │
+                                  ▼
+                       📊 INTENSITY NORMALIZATION
+                                  │
+                                  ▼
+                         🌫️ GAUSSIAN DENOISING
+                                  │
+                                  ▼
+                       🧹 BACKGROUND SUPPRESSION
+                                  │
+                    ┌─────────────┴─────────────┐
+                    │                           │
+                    ▼                           ▼
+              📦 BOX FILTER              ⚫ BLACK-HAT
+            Background Estimate          Morphology
+                    │                           │
+                    └─────────────┬─────────────┘
+                                  │
+                                  ▼
+                    🎞️ TEMPORAL SUBTRACTION
+                         (Optional)
+                                  │
+                                  ▼
+                       📐 MOTION REGISTRATION
+                         (Optional)
+                                  │
+                                  ▼
+                       🎯 VESSEL RESPONSE BOOST
+                                  │
+                                  ▼
+                         ✨ CLAHE ENHANCEMENT
+                                  │
+                                  ▼
+                     🫀 ENHANCED CORONARY IMAGE
 ```
 
-The individual stages are designed to remain computationally lightweight and suitable for CPU-based real-time processing.
+The processing stages are implemented inside `CoronaryEnhancementPipeline.process_frame()`, with per-stage timing available for performance analysis.
 
 ---
 
-# 🧠 Processing Pipeline
+# 🫀 Before → After Concept
 
-## 1. 16-bit Image Preservation
+The pipeline generates three important representations:
 
-Input images are converted or preserved as:
+```text
+🩻 RAW IMAGE
+     │
+     ▼
+🧹 BACKGROUND SUPPRESSED
+     │
+     ▼
+✨ CORONARY ENHANCED
+```
+
+### Output Definitions
+
+| Stage            | Description                                 |
+| ---------------- | ------------------------------------------- |
+| 🩻 **RAW**       | Original input angiography frame            |
+| 🧹 **PROCESSED** | Background-suppressed vessel-response image |
+| ✨ **ENHANCED**   | Final CLAHE-enhanced image                  |
+
+The project also generates side-by-side comparison images showing:
+
+```text
+RAW  |  BACKGROUND SUPPRESSED  |  CORONARY ENHANCED
+```
+
+---
+
+# 🧠 Core Computer Vision Pipeline
+
+## 🔢 1. 16-bit Image Processing
+
+All supported inputs are converted or preserved as:
 
 ```text
 uint16
-Range: 0–65535
+Range: 0 – 65535
 ```
 
-Supported sources are normalized into a common 16-bit grayscale representation.
+For cine sequences, frames share a common intensity scale calculated across the sequence instead of independently scaling each frame.
 
-For cine sequences, frames use a common intensity scale rather than independently rescaling every frame. This is important because independent frame normalization could destroy the intensity relationship needed for temporal subtraction.
+This preserves frame-to-frame intensity relationships required for temporal subtraction.
 
 ---
 
-## 2. Intensity Normalization
+## 📊 2. Intensity Normalization
 
-The default implementation performs fast min-max normalization.
-
-An optional percentile-based normalization can be used when extreme pixels affect the image range.
+The default normalization uses fast min-max normalization.
 
 ```text
 Default:
 Min-Max Normalization
-
-Optional:
-1st–99.5th Percentile Normalization
 ```
 
-The percentile option is more robust to extreme outliers but may increase processing time.
+An optional percentile normalization can use:
+
+```text
+1st percentile → 99.5th percentile
+```
+
+This can reduce the influence of extreme outlier pixels, although it requires additional computation.
 
 ---
 
-## 3. Gaussian Denoising
+## 🌫️ 3. Gaussian Denoising
 
 A small Gaussian blur is applied before morphological processing.
 
@@ -138,19 +154,25 @@ Default:
 gaussian_ksize = 3
 ```
 
-The purpose is to reduce high-frequency sensor noise while keeping computational cost low.
+### Purpose
+
+* 🧹 Reduce sensor noise
+* 🔍 Stabilize morphological processing
+* ⚡ Maintain low computational cost
 
 ---
 
-# 4. Background Suppression
+# 🧹 4. Background Suppression
 
-Background suppression is the core component of the pipeline.
+Background suppression is the main component of the enhancement pipeline.
 
-Two complementary approaches are used.
+Two complementary methods are used.
 
-### Box-Filter Background Estimation
+---
 
-A wide box filter estimates the slowly varying anatomical background.
+## 📦 Box-Filter Background Estimation
+
+A wide box filter estimates slowly varying anatomical background.
 
 Default:
 
@@ -170,13 +192,15 @@ The box filter is selected because it is computationally inexpensive for the req
 
 ---
 
-### Black-Hat Morphology
+## ⚫ Black-Hat Morphological Enhancement
 
-OpenCV's black-hat morphological operation is used to emphasize dark, thin structures.
+The pipeline uses:
 
 ```python
 cv2.MORPH_BLACKHAT
 ```
+
+to emphasize dark, thin structures against a brighter background.
 
 Default:
 
@@ -184,23 +208,27 @@ Default:
 blackhat_kernel = 11
 ```
 
-This is useful because contrast-filled coronary vessels can appear as dark, thin structures relative to surrounding anatomy.
+This is useful for enhancing vessel-like structures in the input representation.
 
-The default implementation uses a single kernel scale to maintain low latency.
+A single kernel scale is used in the real-time configuration to reduce processing cost.
 
-The two suppression responses are combined using:
+---
+
+## 🔗 Combining Suppression Responses
+
+The box-filter response and black-hat response are combined using:
 
 ```python
 cv2.max()
 ```
 
-so that the stronger response is retained at each pixel.
+This retains the stronger response at each pixel.
 
 ---
 
-# 5. Temporal / Reference-Frame Subtraction
+# 🎞️ 5. Temporal / Reference-Frame Subtraction
 
-For cine sequences, a pre-contrast or low-contrast reference frame can be used.
+For cine sequences, a pre-contrast or low-contrast reference frame can be selected.
 
 Example:
 
@@ -214,18 +242,29 @@ python main.py \
 Conceptually:
 
 ```text
-Reference Frame
-      -
-Current Frame
-      ↓
-Temporal Vessel Response
+       🩻 Reference Frame
+              │
+              │
+              ▼
+         ┌─────────┐
+         │    −    │
+         └─────────┘
+              ▲
+              │
+              │
+        🩻 Current Frame
+              │
+              ▼
+      🫀 Vessel Response
 ```
 
-Persistent structures such as ribs, spine, and other anatomical background remain relatively stable, while contrast-filled vessels change between frames.
+Persistent structures such as ribs and spine are relatively stable across frames, while contrast-filled coronary vessels change over time.
 
-This provides a classical approach related to **digital subtraction angiography**.
+Temporal subtraction therefore provides a classical approach related to **digital subtraction angiography**.
 
-### Disable Temporal Subtraction
+---
+
+## 🚫 Disable Temporal Subtraction
 
 If a suitable reference frame is unavailable:
 
@@ -236,19 +275,21 @@ python main.py \
     --no-temporal
 ```
 
-For cine sequences, the reference frame should ideally be a frame before strong coronary contrast appears.
+For cine sequences, the reference frame should ideally be a frame before the contrast bolus strongly opacifies the coronary vessels.
 
 ---
 
-# 6. Optional Translation Registration
+# 📐 6. Optional Translation Registration
 
-Small patient/table translations can be corrected using phase correlation.
+Small patient/table translations can be handled using phase correlation.
+
+The pipeline uses:
 
 ```python
 cv2.phaseCorrelate()
 ```
 
-Enable it with:
+Enable registration:
 
 ```bash
 python main.py \
@@ -258,26 +299,24 @@ python main.py \
     --register
 ```
 
-Registration estimates small X/Y translations between the reference and current frame.
-
 ### Handles
 
-* Small X translation
-* Small Y translation
+* ↔️ Small X translation
+* ↕️ Small Y translation
 
 ### Does Not Handle
 
-* Cardiac deformation
-* Non-rigid motion
-* Full rotation
+* ❤️ Cardiac deformation
+* 🔄 Full rotation
+* 🌀 Non-rigid motion
 
-Registration adds processing overhead, so latency should be benchmarked with and without this option.
+Registration adds processing latency, so it should be benchmarked separately.
 
 ---
 
-# 7. Vessel Response Boost
+# 🎯 7. Vessel Response Boost
 
-After background suppression, a mild vessel-response enhancement is applied.
+A mild vessel-response enhancement is applied after background suppression.
 
 Default:
 
@@ -285,23 +324,25 @@ Default:
 vessel_gain = 1.15
 ```
 
-The implementation uses an unsharp-mask-style enhancement with:
+The implementation uses:
 
 ```python
 cv2.addWeighted()
 ```
 
-The enhancement is intentionally conservative to reduce the risk of amplifying residual noise.
+against a lightly blurred version of the vessel response.
+
+The gain is intentionally conservative to avoid amplifying residual noise into false vessel-like artifacts.
 
 ---
 
-# 8. CLAHE Enhancement
+# ✨ 8. CLAHE Enhancement
 
-The final stage uses:
+The final enhancement stage uses:
 
 **CLAHE — Contrast Limited Adaptive Histogram Equalization**
 
-Default configuration:
+Default:
 
 ```text
 clip_limit = 2.0
@@ -310,25 +351,29 @@ tile_grid = 8 × 8
 
 CLAHE improves local contrast and helps make faint vessel segments more visible.
 
-### Fast Real-Time Mode
+---
 
-The default path uses:
+## ⚡ Fast CLAHE Mode
+
+The default real-time path performs:
 
 ```text
-uint16
-   ↓
-uint8
-   ↓
-CLAHE
-   ↓
-uint16
+16-bit Vessel Response
+        ↓
+      8-bit
+        ↓
+      CLAHE
+        ↓
+      uint16
 ```
 
-Only the final contrast-enhancement stage uses the temporary 8-bit representation.
+This reduces the computational cost of the final CLAHE operation.
 
-The earlier stages remain 16-bit.
+The earlier stages remain in 16-bit processing.
 
-### Full 16-bit CLAHE
+---
+
+## 🔬 Full 16-bit CLAHE
 
 For maximum bit-depth preservation:
 
@@ -339,71 +384,99 @@ python main.py \
     --full-16bit-clahe
 ```
 
-This may increase latency, so the benchmark should be rerun before reporting compliance with the 36 ms requirement.
+This can increase latency, so benchmark again before reporting compliance with the 36 ms requirement.
 
 ---
 
-# 📥 Supported Input
+# 📥 Supported Input Data
 
-The pipeline supports:
+| 📦 Input Type            | 📄 Format                      | 📝 Description               |
+| ------------------------ | ------------------------------ | ---------------------------- |
+| 🩻 Medical Image         | `.dcm`                         | Multi-frame DICOM cine       |
+| 🖼️ High Bit-Depth Image | `.tiff`, `.png`, `.pgm`        | 16-bit grayscale images      |
+| 🎞️ NumPy Cine           | `.npz`                         | Compressed cine sequences    |
+| 🎥 Video                 | `.mp4`, `.avi`, `.mov`, `.mkv` | Usually decoded as 8-bit     |
+| 📁 Image Folder          | Multiple images                | Frame sequence               |
+| 🖼️ Single Image         | Common formats                 | Single-frame processing      |
+| 🧪 Synthetic Cine        | Generated data                 | Development and benchmarking |
 
-| Input         | Format                | Notes                                    |
-| ------------- | --------------------- | ---------------------------------------- |
-| 16-bit images | TIFF / PNG / PGM      | Preserves high-bit-depth input           |
-| DICOM cine    | `.dcm`                | Multi-frame medical imaging              |
-| NumPy cine    | `.npz`                | Suitable for public angiography datasets |
-| Video         | MP4 / AVI / MOV / MKV | Usually decoded as 8-bit                 |
-| Image folder  | Multiple image files  | Frame-by-frame cine processing           |
-| Single image  | Common image formats  | Single-frame processing                  |
-
-> For demonstrating **true 16-bit processing**, DICOM, TIFF, or NPZ input is preferred over ordinary video.
+> 💡 To demonstrate **true 16-bit support**, DICOM, TIFF, or NPZ input is preferred.
 
 ---
 
-# 📂 Project Structure
+# 📚 Dataset Sources
+
+For cine/sequence behaviour, public coronary angiography video datasets can be used, including:
+
+* 🎥 **CoronaryDominance**
+* 🎥 **CADICA**
+
+For expert-labeled vessel validation:
+
+* 🧠 **ARCADE**
+* 🧠 **DCA1**
+
+### ⚠️ Dataset Usage
+
+Always follow the dataset's:
+
+* 📜 License
+* 🔐 Usage restrictions
+* 📚 Citation requirements
+* 📤 Redistribution policy
+
+Do not commit private, restricted, or identifiable patient data to GitHub.
+
+---
+
+# 🏗️ Project Architecture
 
 ```text
 Coronary-Angiography-Enhancement/
 │
-├── main.py
-├── demo_synthetic.py
-├── README.md
-├── requirements.txt
+├── 🐍 main.py
+├── 🧪 demo_synthetic.py
+├── 📖 README.md
+├── 📦 requirements.txt
 │
-├── src/
-│   ├── io_utils.py
-│   ├── pipeline.py
-│   └── benchmark.py
+├── 📁 src/
+│   ├── 📥 io_utils.py
+│   ├── 🧠 pipeline.py
+│   └── 📊 benchmark.py
 │
-├── data/
-│   └── ...
+├── 📁 data/
+│   └── coronary_datasets/
 │
-└── outputs/
-    ├── raw_frame_0000_16bit.tiff
-    ├── processed_frame_0000_16bit.tiff
-    ├── enhanced_frame_0000_16bit.tiff
-    ├── comparison_frame_0000.png
-    ├── comparison.mp4
-    └── benchmark_results.json
+└── 📁 outputs/
+    ├── 🩻 raw_frame_0000_16bit.tiff
+    ├── 🧹 processed_frame_0000_16bit.tiff
+    ├── ✨ enhanced_frame_0000_16bit.tiff
+    ├── 🖼️ comparison_frame_0000.png
+    ├── 🎥 comparison.mp4
+    └── 📊 benchmark_results.json
 ```
 
-### File Responsibilities
+---
 
-| File                | Responsibility                            |
+# 📂 File Responsibilities
+
+| 📄 File             | 🔧 Responsibility                         |
 | ------------------- | ----------------------------------------- |
-| `main.py`           | CLI entry point and pipeline execution    |
-| `src/io_utils.py`   | Input loading and common frame conversion |
-| `src/pipeline.py`   | Core coronary enhancement algorithm       |
-| `src/benchmark.py`  | Latency and performance measurement       |
-| `demo_synthetic.py` | Synthetic 16-bit cine generation          |
-| `requirements.txt`  | Python dependencies                       |
-| `README.md`         | Project documentation                     |
+| `main.py`           | 🚀 CLI entry point and pipeline execution |
+| `src/io_utils.py`   | 📥 Input loading and frame normalization  |
+| `src/pipeline.py`   | 🧠 Core enhancement algorithm             |
+| `src/benchmark.py`  | 📊 Performance benchmarking               |
+| `demo_synthetic.py` | 🧪 Synthetic 16-bit cine generation       |
+| `requirements.txt`  | 📦 Python dependencies                    |
+| `README.md`         | 📖 Project documentation                  |
+
+The original project documentation defines `pipeline.py` as the core algorithm, `io_utils.py` as the common input loader, and `benchmark.py` as the performance-measurement component.
 
 ---
 
 # ⚙️ Installation
 
-## 1. Clone Repository
+## 1️⃣ Clone the Repository
 
 ```bash
 git clone https://github.com/<your-username>/<your-repository>.git
@@ -411,9 +484,9 @@ git clone https://github.com/<your-username>/<your-repository>.git
 cd Coronary-Angiography-Enhancement
 ```
 
-## 2. Create Virtual Environment
+## 2️⃣ Create Virtual Environment
 
-### Windows
+### 🪟 Windows
 
 ```powershell
 python -m venv .venv
@@ -421,7 +494,7 @@ python -m venv .venv
 .venv\Scripts\activate
 ```
 
-### macOS / Linux
+### 🐧 Linux / 🍎 macOS
 
 ```bash
 python -m venv .venv
@@ -429,7 +502,7 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-## 3. Install Dependencies
+## 3️⃣ Install Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -439,13 +512,13 @@ pip install -r requirements.txt
 
 # 🧪 Quick Installation Test
 
-Generate synthetic 16-bit cine data:
+Generate synthetic 16-bit data:
 
 ```bash
 python demo_synthetic.py
 ```
 
-Run the pipeline:
+Run the enhancement pipeline:
 
 ```bash
 python main.py \
@@ -455,9 +528,13 @@ python main.py \
     --save-video
 ```
 
-The synthetic data is intended only for software validation and latency testing.
+The synthetic data is intended only for:
 
-It must **not** be used to claim medical or clinical accuracy.
+* 🧪 Code testing
+* ⚡ Latency testing
+* 🔧 Pipeline development
+
+It should **not** be used to claim clinical or medical accuracy.
 
 ---
 
@@ -486,7 +563,7 @@ python main.py \
 
 ---
 
-# 🖼️ Run on 16-bit Image Folder
+# 🖼️ Run on a Folder of 16-bit Frames
 
 ```bash
 python main.py \
@@ -498,329 +575,310 @@ python main.py \
 
 ---
 
-# 📊 Output Files
+# 🚫 Run Without Temporal Subtraction
 
-The pipeline generates:
+```bash
+python main.py \
+    --input path/to/data \
+    --output outputs \
+    --no-temporal
+```
+
+---
+
+# 📐 Run With Translation Registration
+
+```bash
+python main.py \
+    --input path/to/data \
+    --output outputs \
+    --reference-frame 0 \
+    --register
+```
+
+---
+
+# 🔬 Run With Full 16-bit CLAHE
+
+```bash
+python main.py \
+    --input path/to/data \
+    --output outputs \
+    --full-16bit-clahe
+```
+
+---
+
+# 📤 Output Files
+
+After processing, the output directory contains:
 
 ```text
 outputs/
 │
-├── raw_frame_0000_16bit.tiff
-├── processed_frame_0000_16bit.tiff
-├── enhanced_frame_0000_16bit.tiff
-├── comparison_frame_0000.png
-├── comparison.mp4
-└── benchmark_results.json
+├── 🩻 raw_frame_0000_16bit.tiff
+├── 🧹 processed_frame_0000_16bit.tiff
+├── 🫀 enhanced_frame_0000_16bit.tiff
+├── 🖼️ comparison_frame_0000.png
+├── 🎥 comparison.mp4
+└── 📊 benchmark_results.json
 ```
 
-### Output Definitions
+### 🩻 Raw Frame
 
-**Raw**
+Original input.
 
-Original input image.
+### 🧹 Processed Frame
 
-**Processed**
+Background-suppressed vessel response after the vessel-response boost.
 
-Background-suppressed vessel-response image before final CLAHE.
+### 🫀 Enhanced Frame
 
-**Enhanced**
+Final CLAHE-enhanced image.
 
-Final CLAHE-enhanced coronary image.
+### 🖼️ Comparison
 
-**Comparison**
+Side-by-side:
 
 ```text
-RAW
-   │
-   ▼
-BACKGROUND SUPPRESSED
-   │
-   ▼
-CORONARY ENHANCED
+RAW | BACKGROUND SUPPRESSED | CORONARY ENHANCED
 ```
 
-The project provides raw/processed/enhanced comparison specifically for visual evaluation.
+### 🎥 Comparison Video
+
+Generated for cine sequences when:
+
+```bash
+--save-video
+```
+
+is specified.
+
+### 📊 Benchmark JSON
+
+Contains measured processing-performance information.
 
 ---
 
-# ⚡ 36 ms Performance Requirement
+# ⚡ Real-Time Performance
 
-The mandatory project requirement is:
+## 🎯 Mandatory Requirement
 
 ```text
-Maximum Processing Latency ≤ 36 ms/frame
+┌──────────────────────────────────┐
+│  MAXIMUM LATENCY ≤ 36 ms/frame   │
+└──────────────────────────────────┘
 ```
 
 The benchmark measures:
 
 ```text
-Frame enters pipeline
-        ↓
-Processing
-        ↓
-Enhanced frame produced
+🩻 Frame enters pipeline
+          ↓
+🧠 Processing
+          ↓
+✨ Enhanced frame produced
 ```
 
-It excludes:
+### Excluded
 
-```text
-Disk loading
-File writing
-Video encoding/output I/O
-```
+* 💾 Disk loading
+* 💾 File writing
+* 🎥 Output encoding
+
+The documented benchmark design times `process_frame()` after a warm-up pass.
 
 ---
 
-# 📈 Benchmark Metrics
+# 📊 Benchmark Metrics
 
-`outputs/benchmark_results.json` reports:
+`benchmark_results.json` reports:
 
-* Average latency
-* Minimum latency
-* Maximum latency
-* P50 latency
-* P95 latency
-* P99 latency
-* FPS from mean latency
-* Overall throughput
-* Image size
-* Image dtype
-* CPU information
-* RAM information
-* OpenCV configuration
-* Per-stage timing
-* Whether maximum latency is ≤36 ms
-
-The benchmark is designed to time the processing function after a warm-up pass.
+| Metric          | Description                   |
+| --------------- | ----------------------------- |
+| ⏱️ Average      | Mean processing latency       |
+| ⚡ Minimum       | Fastest frame                 |
+| 🚨 Maximum      | Slowest frame                 |
+| 📊 P50          | Median latency                |
+| 📈 P95          | 95th percentile latency       |
+| 📈 P99          | 99th percentile latency       |
+| 🎞️ FPS         | Frames per second             |
+| 🚀 Throughput   | Overall processing throughput |
+| 🖼️ Image Size  | Input resolution              |
+| 🔢 Data Type    | Input/output dtype            |
+| 💻 CPU          | Hardware information          |
+| 🧠 RAM          | Memory information            |
+| 🔧 OpenCV       | OpenCV configuration          |
+| 🧩 Stage Timing | Per-stage processing time     |
 
 ---
 
 # ⚠️ Performance Reporting
 
-**Do not claim the 36 ms requirement has been achieved unless it has been measured on the exact submission hardware and dataset.**
+**Do not claim the 36 ms target until it has been measured on the exact submission hardware and dataset.**
 
-Performance can vary depending on:
+Performance depends on:
 
-* CPU
-* Image resolution
-* OpenCV build
-* Number of frames
-* Reference-frame subtraction
-* Translation registration
-* CLAHE mode
-* Kernel sizes
-* Operating system
+* 💻 CPU
+* 🖼️ Image resolution
+* 🔧 OpenCV build
+* 📐 Registration
+* 🎞️ Temporal subtraction
+* ⚙️ Kernel sizes
+* ✨ CLAHE mode
+* 🧠 System configuration
 
-Example measurements from the project's test environment were approximately 4–6 ms average for synthetic 512×512 sequences, but these values are machine-dependent and should not be treated as guaranteed results.
-
----
-
-# 📚 Dataset Recommendations
-
-For cine/sequence behaviour, the project can be evaluated using public coronary angiography video datasets such as:
-
-* **CoronaryDominance**
-* **CADICA**
-
-For expert-labeled vessel validation:
-
-* **ARCADE**
-* **DCA1**
-
-Always follow the individual dataset's:
-
-* License
-* Terms of use
-* Citation requirements
-* Redistribution restrictions
-
-Do not upload restricted or identifiable medical data to this repository.
+Example measurements documented for this project include approximately **4–6 ms average latency** for a synthetic 512×512 sequence and approximately **4.3 ms average** for one provided 512×512 case. These are machine-dependent reference measurements, not guaranteed results.
 
 ---
 
-# 🧪 Validation Strategy
+# 🧪 Validation
 
-A practical validation setup can include:
+The project can be tested under different conditions:
 
 ```text
-                    Dataset
-                       │
-          ┌────────────┴────────────┐
-          │                         │
-       Cine Data              Labeled Data
-          │                         │
-          ▼                         ▼
- Temporal Behaviour          Vessel Validation
-          │                         │
-          ▼                         ▼
- Motion / Contrast            Visual / Quantitative
-       Testing                    Analysis
+                    🧪 TEST DATA
+                         │
+          ┌──────────────┼──────────────┐
+          │              │              │
+          ▼              ▼              ▼
+       🟢 Clean       🟡 Low         🔴 Noisy
+                      Contrast        Motion
+          │              │              │
+          └──────────────┼──────────────┘
+                         ▼
+                  📊 Benchmark
+                         │
+                         ▼
+                 🖼️ Visual Analysis
 ```
 
-The synthetic dataset can be used for software and latency testing, while real angiography datasets should be used for meaningful visual/qualitative evaluation.
+The documented synthetic cases include clean, low-contrast, and noisy-motion conditions.
 
 ---
 
-# 🩺 Interpreting the Method Honestly
+# 🧠 Requirement Mapping
 
-This project performs:
-
-```text
-Image Suppression
-        +
-Vessel Enhancement
-```
-
-It does **not** perform full anatomical semantic segmentation.
-
-The algorithm does not explicitly classify every pixel as:
-
-```text
-Rib
-Spine
-Lung
-Vessel
-Background
-```
-
-Instead:
-
-* Box filtering suppresses slowly varying background.
-* Black-hat morphology emphasizes dark thin structures.
-* Temporal subtraction suppresses persistent anatomy.
-* Vessel-response enhancement strengthens vessel-like structures.
-* CLAHE improves local contrast.
-
-If explicit pixel-wise anatomical removal is required, a trained segmentation model would be a separate extension and would still need to satisfy the 36 ms/frame requirement.
-
----
-
-# ⚠️ Known Limitations
-
-1. This is enhancement/suppression rather than semantic segmentation.
-2. It does not explicitly identify every anatomical structure.
-3. Translation registration does not correct cardiac deformation.
-4. Rotation is not explicitly corrected.
-5. The method assumes vessels appear darker than surrounding anatomy.
-6. Multi-scale vessel enhancement is not enabled in the real-time default.
-7. Synthetic data is not clinically or anatomically accurate.
-8. Real datasets are required for meaningful visual validation.
-9. Full 16-bit CLAHE may increase processing latency.
-10. Registration increases computational cost.
+| 🎯 Requirement         | 🛠️ Implementation                      |
+| ---------------------- | --------------------------------------- |
+| 16-bit grayscale       | 🔢 `uint16` processing                  |
+| Background suppression | 📦 Box filter + ⚫ Black-hat             |
+| Coronary enhancement   | ⚫ Black-hat + 🎯 Vessel boost + ✨ CLAHE |
+| Noise handling         | 🌫️ Gaussian denoising                  |
+| Contrast variation     | 📊 Normalization                        |
+| Temporal subtraction   | 🎞️ Reference-frame subtraction         |
+| Motion handling        | 📐 Phase correlation                    |
+| Real-time processing   | ⚡ CPU-optimized OpenCV                  |
+| ≤36 ms/frame           | 📊 Dedicated benchmark                  |
+| Performance reporting  | 📄 JSON output                          |
+| Visual comparison      | 🖼️ RAW / PROCESSED / ENHANCED          |
+| Video output           | 🎥 Optional comparison video            |
 
 ---
 
 # 🔧 Main Configuration Parameters
 
-| Parameter           | Default | Purpose                         |
-| ------------------- | ------: | ------------------------------- |
-| `gaussian_ksize`    |     `3` | Noise reduction                 |
-| `background_kernel` |    `31` | Background estimation           |
-| `blackhat_kernel`   |    `11` | Thin dark-structure enhancement |
-| `vessel_gain`       |  `1.15` | Vessel-response boost           |
-| `clip_limit`        |   `2.0` | CLAHE contrast limit            |
-| CLAHE tile grid     | `8 × 8` | Local contrast processing       |
-| `fast_clahe_8bit`   |  `True` | Faster final CLAHE              |
+| ⚙️ Parameter        | 🔢 Default | 🎯 Purpose                          |
+| ------------------- | ---------: | ----------------------------------- |
+| `gaussian_ksize`    |        `3` | 🌫️ Noise reduction                 |
+| `background_kernel` |       `31` | 📦 Background estimation            |
+| `blackhat_kernel`   |       `11` | ⚫ Vessel-like structure enhancement |
+| `vessel_gain`       |     `1.15` | 🎯 Vessel response boost            |
+| `clip_limit`        |      `2.0` | ✨ CLAHE contrast limit              |
+| CLAHE tile grid     |    `8 × 8` | 🔍 Local contrast                   |
+| `fast_clahe_8bit`   |     `True` | ⚡ Faster CLAHE                      |
 
 ---
 
-# 🛠️ Technologies
+# 🩺 Medical Imaging Considerations
 
-* **Python**
-* **OpenCV**
-* **NumPy**
-* **DICOM**
-* **Classical Computer Vision**
-* **Morphological Image Processing**
-* **CLAHE**
-* **Phase Correlation**
-* **Temporal Image Subtraction**
-* **16-bit Image Processing**
-* **Performance Benchmarking**
+This project is an **image enhancement/suppression system**, not a diagnostic segmentation model.
+
+It does not explicitly classify every pixel as:
+
+```text
+🦴 Rib
+🦴 Spine
+🫁 Lung
+🫀 Vessel
+⬜ Background
+```
+
+Instead, it uses image-processing characteristics to emphasize vessel-like structures.
+
+### Important Limitations
+
+* ❌ No semantic segmentation
+* ❌ No explicit anatomical classification
+* ❌ No full cardiac-motion correction
+* ❌ No non-rigid registration
+* ❌ Translation registration only
+* ❌ Synthetic data is not clinically accurate
+
+---
+
+# ⚠️ Known Limitations
+
+1. 🧠 Enhancement/suppression is not semantic segmentation.
+2. 📐 Registration handles translation but not cardiac deformation.
+3. 🔄 Rotation is not explicitly corrected.
+4. 🫀 The algorithm assumes vessels appear darker than surrounding anatomy.
+5. 🔬 Multi-scale enhancement is not enabled in the real-time default.
+6. 🧪 Synthetic data is intended only for development and latency testing.
+7. 🏥 Real coronary angiography datasets are required for meaningful qualitative validation.
+8. ⚡ Full 16-bit CLAHE may increase processing latency.
+9. 📐 Registration increases computational cost.
 
 ---
 
 # 🚀 Future Improvements
 
-Possible future extensions include:
+Potential future extensions include:
 
-* Multi-scale vessel enhancement
-* Deep-learning vessel segmentation
-* GPU acceleration
-* Non-rigid image registration
-* Cardiac-motion compensation
-* Advanced temporal filtering
-* Vessel centerline extraction
-* Vessel diameter estimation
-* Stenosis analysis
-* Quantitative coronary vessel analysis
-* Larger real-world dataset validation
-* Optimized GPU/CPU hybrid processing
-
----
-
-# 📌 Research / Educational Disclaimer
-
-This repository is intended for **research, educational, and assignment purposes**.
-
-It is not:
-
-* A certified medical device
-* A diagnostic system
-* A treatment-planning system
-* A substitute for clinical interpretation
-
-Enhanced images should not be used independently for clinical decision-making.
+* 🧠 Deep-learning vessel segmentation
+* 🔬 Multi-scale vessel enhancement
+* 🎮 GPU acceleration
+* 📐 Non-rigid registration
+* ❤️ Cardiac-motion compensation
+* 🎞️ Advanced temporal filtering
+* 🫀 Vessel centerline extraction
+* 📏 Vessel diameter estimation
+* 🔍 Stenosis analysis
+* 📊 Quantitative vessel analysis
+* 🧪 Larger real-world dataset validation
+* ⚡ Optimized GPU/CPU processing
 
 ---
 
-# 👨‍💻 Author
-
-**Hrushikesh Kate**
-
-B.Tech Computer Engineering — AI & ML
-
-### Areas of Interest
-
-* Computer Vision
-* Artificial Intelligence
-* Machine Learning
-* Deep Learning
-* Medical Image Processing
-* Generative AI
-* AI Automation
-
----
-
-# ⭐ Key Features
+# 🛠️ Technologies Used
 
 ```text
-✓ 16-bit Coronary Angiography Processing
-✓ DICOM / NPZ / TIFF / Image Folder Support
-✓ Background Suppression
-✓ Black-Hat Vessel Enhancement
-✓ Temporal Reference Subtraction
-✓ Optional Translation Registration
-✓ Vessel Response Boost
-✓ CLAHE Enhancement
-✓ Synthetic 16-bit Cine Generation
-✓ Real-Time CPU Processing
-✓ ≤36 ms Performance Target
-✓ Detailed Latency Benchmarking
-✓ RAW / PROCESSED / ENHANCED Comparison
-✓ Benchmark JSON Output
-✓ Research-Friendly Architecture
+🐍 Python
+👁️ OpenCV
+🔢 NumPy
+🩻 DICOM
+🧠 Classical Computer Vision
+⚫ Morphological Image Processing
+✨ CLAHE
+📐 Phase Correlation
+🎞️ Temporal Subtraction
+🔢 16-bit Image Processing
+📊 Performance Benchmarking
 ```
 
 ---
 
-## 📖 Reproducibility
+# 📖 Reproducibility
 
-To reproduce an experiment:
+Generate the synthetic dataset:
 
 ```bash
 python demo_synthetic.py
+```
 
+Run the complete pipeline:
+
+```bash
 python main.py \
     --input synthetic_cine \
     --output outputs \
@@ -831,9 +889,111 @@ python main.py \
 Then inspect:
 
 ```text
-outputs/benchmark_results.json
-outputs/comparison_frame_0000.png
-outputs/comparison.mp4
+📊 outputs/benchmark_results.json
+
+🖼️ outputs/comparison_frame_0000.png
+
+🎥 outputs/comparison.mp4
 ```
 
-For the first frame, remember that frame `0` may be the reference frame itself. A middle frame is generally more informative for visually inspecting contrast-filled coronary vessels.
+For visual evaluation, a middle frame is generally more useful than the reference frame because frame `0` may primarily demonstrate background suppression rather than strong contrast-filled vessel enhancement.
+
+---
+
+# 📌 Important Data Policy
+
+Medical imaging data can contain sensitive information.
+
+Before uploading any dataset to GitHub:
+
+```text
+🔐 Check anonymization
+        ↓
+📜 Check dataset license
+        ↓
+📋 Check redistribution rules
+        ↓
+🚫 Remove patient-identifying information
+        ↓
+✅ Upload only permitted data
+```
+
+Do not commit restricted or identifiable patient data to the repository.
+
+---
+
+# 🩺 Research / Educational Disclaimer
+
+> ⚠️ This project is intended for **research, education, and assignment purposes only**.
+>
+> It is not a certified medical device and should not be used for diagnosis, treatment planning, or independent clinical decision-making.
+
+---
+
+# 👨‍💻 Author
+
+## Hrushikesh Kate
+
+🎓 **B.Tech Computer Engineering — AI & ML**
+
+### Areas of Interest
+
+* 🤖 Artificial Intelligence
+* 🧠 Machine Learning
+* 👁️ Computer Vision
+* 🧬 Medical Image Processing
+* 🧠 Deep Learning
+* ✨ Generative AI
+* ⚙️ AI Automation
+
+---
+
+# ⭐ Project Highlights
+
+```text
+╔══════════════════════════════════════════════╗
+║     🫀 CORONARY ANGIOGRAPHY ENHANCEMENT     ║
+╠══════════════════════════════════════════════╣
+║ 🩻 16-bit Medical Image Processing           ║
+║ ⚫ Black-Hat Vessel Enhancement              ║
+║ 🧹 Anatomical Background Suppression         ║
+║ 🎞️ Temporal Reference Subtraction            ║
+║ 📐 Translation Registration                  ║
+║ 🎯 Vessel Response Enhancement               ║
+║ ✨ CLAHE Local Contrast Enhancement          ║
+║ 🧪 Synthetic Cine Generation                 ║
+║ ⚡ Real-Time CPU Pipeline                    ║
+║ 📊 Detailed Performance Benchmarking        ║
+║ 🎥 Cine / Video Processing                   ║
+║ 🖼️ RAW → PROCESSED → ENHANCED               ║
+║ 📁 DICOM / NPZ / TIFF / Image Folder        ║
+╚══════════════════════════════════════════════╝
+```
+
+---
+
+# 🌟 Final Result
+
+```text
+        🩻 RAW ANGIOGRAPHY
+                │
+                ▼
+       🧹 BACKGROUND SUPPRESSION
+                │
+                ▼
+        ⚫ VESSEL ENHANCEMENT
+                │
+                ▼
+        ✨ CONTRAST ENHANCEMENT
+                │
+                ▼
+        🫀 CORONARY ENHANCED
+                │
+                ▼
+          📊 BENCHMARK
+                │
+                ▼
+       ⚡ REAL-TIME ANALYSIS
+```
+
+> 🫀 **Enhance the vessels. Suppress the background. Measure the performance.**
